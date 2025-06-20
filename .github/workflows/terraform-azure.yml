@@ -1,0 +1,61 @@
+name: 'Terraform Azure'
+
+on:
+  workflow_call:
+    secrets:
+      TF_STATE_STORAGE_ACCOUNT_NAME:
+        required: true
+      TF_ARM_CLIENT_ID:
+        required: true
+      TF_ARM_TENANT_ID:
+        required: false
+      
+      GH_OWNER:
+        required: false
+      GH_TOKEN:
+        required: false
+
+jobs:
+  terraform-azure:
+    name: 'Terraform Azure'
+    runs-on: ubuntu-latest
+    env:
+      ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
+      ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
+      ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      GITHUB_OWNER: ${{ secrets.GH_OWNER }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Install the latest version of Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    # Initialize Terraform using the relevant backend
+    - name: Terraform Init
+      run: |
+        terraform init -reconfigure \
+        -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT_NAME }}"
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      run: terraform fmt -check
+
+    # Generates an execution plan for Terraform
+    - name: Terraform Plan
+      run: terraform plan -out=tfplan
+
+    # On "main" branch run Terraform Apply to ensure infrastructure aligns with main branch code
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main'
+      run: terraform apply -auto-approve tfplan
