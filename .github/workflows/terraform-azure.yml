@@ -32,7 +32,7 @@ jobs:
     environment: ${{ inputs.environment || null }}
     env:
       use-tfplan-output: ${{ inputs.use-tfplan-output || false }} # Default to false
-      tfplan-file-name: ${{ inputs.environment || tfplan }}.tfplan
+      tfplan-file-name: ${{ inputs.environment || "tfplan" }}.tfplan
       ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
       ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
       ARM_USE_OIDC: true
