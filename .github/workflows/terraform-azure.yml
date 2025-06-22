@@ -32,6 +32,7 @@ jobs:
     environment: ${{ inputs.environment || null }}
     env:
       use-tfplan-output: ${{ inputs.use-tfplan-output || false }} # Default to false
+      tfplan-file-name: ${{ inputs.environment }}.tfplan
       ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
       ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
       ARM_USE_OIDC: true
@@ -67,19 +68,19 @@ jobs:
     # Generates an execution plan for Terraform
     - name: Terraform Plan
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
-      run: terraform plan -input=false -out="${{ inputs.environment }}.tfplan"
+      run: terraform plan -input=false -out="${{ env.tfplan-file-name }}"
 
     - name: Upload Plan
-      if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ inputs.environment }}.tfplan') != '' }}
+      if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true' && ${{ hashFiles(env.tfplan-file-name) != '' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.environment }}.tfplan
-        path: "${{ inputs.environment }}.tfplan"
+        name: ${{ env.tfplan-file-name }}
+        path: "${{ env.tfplan-file-name }}"
         if-no-files-found: ignore
         overwrite: true
 
     - name: Get latest workflow run for PR
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ inputs.environment }}.tfplan') != '' }}
+      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
       uses: octokit/request-action@v2.x
       id: get_latest_run
       with:
@@ -88,14 +89,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download Plan
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ inputs.environment }}.tfplan') != '' }}
+      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.environment }}.tfplan
+        name: ${{ env.tfplan-file-name }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: ${{ fromJson(steps.get_latest_run.outputs.data).workflow_runs[0].id }}
 
     # On "main" branch run Terraform Apply to ensure infrastructure aligns with main branch code
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && ${{ hashFiles('${{ inputs.environment }}.tfplan') != '' }}
-      run: terraform apply -input=false -auto-approve "${{ inputs.environment }}.tfplan"
+      if: github.ref == 'refs/heads/main' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
+      run: terraform apply -input=false -auto-approve "${{ env.tfplan-file-name }}"
