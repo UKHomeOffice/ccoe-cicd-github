@@ -86,7 +86,7 @@ jobs:
       run: | 
         workflowpath="${workflow%@*}"
         workflowpathencoded="${workflowpath//"/"/"%2f"}"
-        echo workflow-path-encoded >> $GITHUB_OUTPUT
+        echo workflowpathencoded >> $GITHUB_OUTPUT
 
     - name: Get latest workflow run for PR
       if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
