@@ -5,7 +5,7 @@ on:
     inputs:
       environment:
         type: string
-        required: false
+        required: true
       working-directory:
         type: string
         required: false
@@ -39,7 +39,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || "./" }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
