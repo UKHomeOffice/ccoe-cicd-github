@@ -71,7 +71,7 @@ jobs:
       run: terraform plan -input=false -out="${{ env.tfplan-file-name }}"
 
     - name: Upload Plan
-      if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true' && ${{ hashFiles(env.tfplan-file-name) != '' }}
+      if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true' && hashFiles(env.tfplan-file-name) != ''
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.tfplan-file-name }}
