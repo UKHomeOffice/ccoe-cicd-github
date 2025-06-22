@@ -68,7 +68,7 @@ jobs:
     # Generates an execution plan for Terraform
     - name: Terraform Plan
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
-      run: terraform plan -input=false -out="${{ env.tfplan-file-name }}"
+      run: terraform plan -input=false -out="./${{ env.tfplan-file-name }}"
 
     - name: Upload Plan
       if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true'
