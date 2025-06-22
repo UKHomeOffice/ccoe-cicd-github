@@ -90,7 +90,7 @@ jobs:
       uses: octokit/request-action@v2.x
       id: get_latest_run
       with:
-        route: GET /repos/${{ github.repository }}/actions/workflows/${{ steps.workflow-path.outputs.workflow-path }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
+        route: GET /repos/${{ github.repository }}/actions/workflows/${{ steps.workflow-path.outputs.workflow-path-encoded }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
