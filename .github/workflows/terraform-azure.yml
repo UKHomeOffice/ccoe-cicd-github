@@ -79,21 +79,19 @@ jobs:
         if-no-files-found: ignore
         overwrite: true
 
-    - name: Get workflow path
+    - name: Get workflow file name
       env:
         workflow: ${{ github.workflow_ref }}    
-      id: workflow-path
+      id: workflow-file-name
       run: | 
-        workflowpath="${workflow%@*}"
-        workflowpathencoded="${workflowpath//"/"/"%2f"}"
-        echo $workflowpathencoded >> $GITHUB_OUTPUT
+        echo workflowfile=$(echo "$workflow" | grep -oP '(?<=.github/workflows/).*?(?=@)') >> $GITHUB_OUTPUT
 
     - name: Get latest workflow run for PR
       if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
       uses: octokit/request-action@v2.x
       id: get_latest_run
       with:
-        route: GET /repos/${{ github.repository }}/actions/workflows/${{ steps.workflow-path.outputs.workflow-path-encoded }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
+        route: GET /repos/${{ github.repository }}/actions/workflows/.github%2fworkflows%2f${{ steps.workflow-file-name.outputs.workflowfile }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
