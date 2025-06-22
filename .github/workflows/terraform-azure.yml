@@ -2,6 +2,13 @@ name: 'Terraform Azure'
 
 on:
   workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: false
+      working-directory:
+        type: string
+        required: false
     secrets:
       TF_STATE_STORAGE_ACCOUNT_NAME:
         required: true
@@ -19,6 +26,7 @@ jobs:
   terraform-azure:
     name: 'Terraform Azure'
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     env:
       ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
       ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
@@ -31,6 +39,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: ${{ inputs.working-directory }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
