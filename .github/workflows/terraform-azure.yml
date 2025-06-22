@@ -81,9 +81,9 @@ jobs:
 
     - name: Get workflow path
       env:
-        workflow-ref: ${{ github.workflow_ref }}    
+        workflow: ${{ github.workflow_ref }}    
       id: workflow-path
-      run: echo "workflow-path=${workflow-ref%@*}" >> $GITHUB_OUTPUT
+      run: echo "workflow-path=${workflow%@*}" >> $GITHUB_OUTPUT
 
     - name: Get latest workflow run for PR
       if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
