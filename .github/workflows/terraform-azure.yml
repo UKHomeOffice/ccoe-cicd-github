@@ -80,7 +80,7 @@ jobs:
         overwrite: true
 
     - name: Get latest workflow run for PR
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
+      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
       uses: octokit/request-action@v2.x
       id: get_latest_run
       with:
@@ -89,7 +89,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download Plan
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
+      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
       uses: actions/download-artifact@v4
       with:
         name: ${{ env.tfplan-file-name }}
@@ -98,5 +98,5 @@ jobs:
 
     # On "main" branch run Terraform Apply to ensure infrastructure aligns with main branch code
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && ${{ hashFiles('${{ env.tfplan-file-name }}') != '' }}
+      if: github.ref == 'refs/heads/main'
       run: terraform apply -input=false -auto-approve "${{ env.tfplan-file-name }}"
