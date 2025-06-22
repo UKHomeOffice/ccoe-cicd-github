@@ -66,8 +66,8 @@ jobs:
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
-      if: github.event_name == 'pull_request' && env.use-tfplan-output == true || env.use-tfplan-output == false
-      run: terraform plan -input=false -out=${{ inputs.environment }}.tfplan
+      if: (github.event_name == 'pull_request' && env.use-tfplan-output == true) || env.use-tfplan-output == false
+      run: terraform plan -input=false -out="${{ inputs.environment }}.tfplan"
 
     - name: Upload Plan
       if: github.event_name == 'pull_request' && env.use-tfplan-output == true
@@ -98,4 +98,4 @@ jobs:
     # On "main" branch run Terraform Apply to ensure infrastructure aligns with main branch code
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
-      run: terraform apply -input=false -auto-approve ${{ inputs.environment }}.tfplan
+      run: terraform apply -input=false -auto-approve "${{ inputs.environment }}.tfplan"
