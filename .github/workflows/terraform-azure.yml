@@ -75,11 +75,12 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.tfplan-file-name }}
-        path: "${{ env.tfplan-file-name }}"
+        path: "**/${{ env.tfplan-file-name }}"
         if-no-files-found: ignore
         overwrite: true
 
     - name: Get workflow file name
+      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
       env:
         workflow: ${{ github.workflow_ref }}    
       id: workflow-file-name
