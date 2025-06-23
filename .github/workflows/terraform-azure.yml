@@ -76,7 +76,7 @@ jobs:
       with:
         name: ${{ env.tfplan-file-name }}
         path: "**/${{ env.tfplan-file-name }}"
-        if-no-files-found: ignore
+        if-no-files-found: error
         overwrite: true
 
     - name: Get workflow file name
