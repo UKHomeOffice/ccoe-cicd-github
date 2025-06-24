@@ -70,6 +70,14 @@ jobs:
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
       run: terraform plan -input=false -out="./${{ env.tfplan-file-name }}"
 
+    - name: Terraform Trivy Scan
+      if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "config"
+        scan-ref: "./${{ env.tfplan-file-name }}"
+        exit-code: "1"
+
     - name: Upload Plan
       if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true'
       uses: actions/upload-artifact@v4
