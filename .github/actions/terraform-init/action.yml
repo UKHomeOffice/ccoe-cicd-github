@@ -1,0 +1,61 @@
+name: "Terraform Init"
+description: "Terraform init to support multiple cloud providers"
+
+inputs:
+  cloud-provider:
+    required: true
+    description: "Cloud provider for Terraform state backend. [Azure]"
+  backend-storage-name:
+    required: true
+    description: "Name of backend storage location. Azure is storage account name."
+  tf-version:
+    required: false
+    description: "The version of Terraform to use. Defaults to latest."
+    default: "latest"
+
+outputs:
+  init-outcome:
+    description: "Terraform init command outcome"
+    value: ${{ steps.init.outcome }}
+  trivy-outcome:
+    description: "Trivy scan command outcome"
+    value: ${{ steps.trivy.outcome }}
+
+runs:
+  using: "composite"
+  steps:
+    # Install the specified version of Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.tf-version }}
+
+    # Initialize Terraform using the Azure backend
+    - name: Terraform Init Azure
+      if: inputs.cloud-provider == "Azure"
+      id: init
+      shell: bash
+      run: |
+        terraform init -reconfigure \
+        -backend-config="storage_account_name=${{ inputs.backend-storage-name }}"
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      shell: bash
+      run: terraform fmt -check
+    
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Validate
+      shell: bash
+      run: terraform validate
+
+    # Scan the repo with Trivy
+    - name: Repo Trivy Scan
+      id: trivy
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "fs"
+        scan-ref: "."
+        format: 'table'
+        exit-code: '1'
+        trivyignores: ".trivyignore"

@@ -1,0 +1,48 @@
+name: "Terraform Plan"
+description: "Terraform plan to support multiple cloud providers"
+
+inputs:
+  tfplan-name:
+    required: false
+    description: "The filename to use for the output Terraform plan file."
+    default: "tfplan.tfplan"
+  output-tfplan:
+    required: false
+    description: "If a Terraform plan file should be output as an artifact."
+    default: "false"
+
+outputs:
+  plan-outcome:
+    description: "Terraform plan command outcome"
+    value: ${{ steps.plan.outcome }}
+  trivy-outcome:
+    description: "Trivy scan command outcome"
+    value: ${{ steps.trivy.outcome }}    
+
+runs:
+  using: "composite"
+  steps:
+    # Run the Terraform plan
+    - name: Terraform Plan
+      shell: bash
+      run: terraform plan -input=false -out="./${{ inputs.tfplan-name }}"     
+
+    # Scan the Terraform plan with Trivy
+    - name: Terraform Plan Trivy Scan
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "config"
+        scan-ref: "./${{ inputs.tfplan-name }}"
+        format: "table"
+        exit-code: "1"
+        trivyignores: ".trivyignore"
+
+    # Upload the Terraform plan as an artifact
+    - name: Upload Plan
+      if: inputs.output-tfplan == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.tfplan-name }}
+        path: "**/${{ inputs.tfplan-name }}"
+        if-no-files-found: error
+        overwrite: true

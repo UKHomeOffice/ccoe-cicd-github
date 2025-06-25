@@ -51,60 +51,33 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # Install the latest version of Terraform CLI
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-
-    # Initialize Terraform using the relevant backend
+    # Terraform setup, init, format, validate and repo Trivy scan
+    # On every run
     - name: Terraform Init
-      run: |
-        terraform init -reconfigure \
-        -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT_NAME }}"
-
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check
-
-    # Generates an execution plan for Terraform
+      id: init
+      uses: ./.github/actions/terraform-init
+      with:
+        cloud-provider: "Azure"
+        backend-storage-name: ${{ secrets.TF_STATE_STORAGE_ACCOUNT_NAME }}
+        auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
+    
+    # Terraform plan, state file Trivy scan and optional upload artifact
+    # On pull requests where using plan output and all requests when not using plan output
     - name: Terraform Plan
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
-      run: terraform plan -input=false -out="./${{ env.tfplan-file-name }}"
-
-    - name: Upload Plan
-      if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true'
-      uses: actions/upload-artifact@v4
+      id: plan
+      uses: ./.github/actions/terraform-plan
       with:
-        name: ${{ env.tfplan-file-name }}
-        path: "**/${{ env.tfplan-file-name }}"
-        if-no-files-found: error
-        overwrite: true
+        auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
+        tfplan-name: ${{ env.tfplan-file-name }}
+        output-tfplan: ${{ env.use-tfplan-output }}
 
-    - name: Get workflow file name
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
-      env:
-        workflow: ${{ github.workflow_ref }}    
-      id: workflow-file-name
-      run: | 
-        echo workflowfile=$(echo "$workflow" | grep -oP '(?<=.github/workflows/).*?(?=@)') >> $GITHUB_OUTPUT
-
-    - name: Get latest workflow run for PR
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
-      uses: octokit/request-action@v2.x
-      id: get_latest_run
-      with:
-        route: GET /repos/${{ github.repository }}/actions/workflows/.github%2fworkflows%2f${{ steps.workflow-file-name.outputs.workflowfile }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Download Plan
-      if: github.ref == 'refs/heads/main' && env.use-tfplan-output == 'true'
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.tfplan-file-name }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        run-id: ${{ fromJson(steps.get_latest_run.outputs.data).workflow_runs[0].id }}
-
-    # On "main" branch run Terraform Apply to ensure infrastructure aligns with main branch code
+    # Terraform apply
+    # On "main" branch
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
-      run: terraform apply -input=false -auto-approve "${{ env.tfplan-file-name }}"
+      id: apply
+      uses: ./.github/actions/terraform-apply
+      with:
+        tfplan-name: ${{ env.tfplan-file-name }}
+        use-tfplan-artifact: ${{ env.use-tfplan-output }}

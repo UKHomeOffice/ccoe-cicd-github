@@ -1,0 +1,55 @@
+name: "Terraform Apply"
+description: "Terraform apply to support multiple cloud providers"
+
+inputs:
+  tfplan-name:
+    required: false
+    description: "The filename used for the Terraform plan output file."
+    default: "tfplan.tfplan"
+  use-tfplan-artifact:
+    required: false
+    description: "If the Terraform plan output fil artifact from the last successful plan should be used."
+    default: "false"
+
+outputs:
+  apply-outcome:
+    description: "Terraform apply command outcome"
+    value: ${{ steps.apply.outcome }}
+  trivy-outcome:
+    description: "Trivy scan command outcome"
+    value: ${{ steps.trivy.outcome }}    
+
+runs:
+  using: "composite"
+  steps:
+    # Get the GitHub Actions workflow .yml file name
+    - name: Get workflow file name
+      if: inputs.use-tfplan-artifact == 'true'
+      env:
+        workflow: ${{ github.workflow_ref }}
+      id: workflow-file-name
+      run: | 
+        echo workflowfile=$(echo "$workflow" | grep -oP '(?<=.github/workflows/).*?(?=@)') >> $GITHUB_OUTPUT
+
+    # Get the latest successful workflow run for the pull request
+    - name: Get latest workflow run for PR
+      if: inputs.use-tfplan-artifact == 'true'
+      uses: octokit/request-action@v2.x
+      id: get-latest-run
+      with:
+        route: GET /repos/${{ github.repository }}/actions/workflows/.github%2fworkflows%2f${{ steps.workflow-file-name.outputs.workflowfile }}/runs?head_sha=${{ github.event.pull_request.head.sha }}&status=success
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Download the Terraform plan file artifact
+    - name: Download Plan
+      if: inputs.use-tfplan-artifact == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.tfplan-name }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ fromJson(steps.get-latest-run.outputs.data).workflow_runs[0].id }}
+
+    # Run Terraform Apply to ensure infrastructure aligns with code
+    - name: Terraform Apply
+      run: terraform apply -input=false -auto-approve "${{ inputs.tfplan-name }}"
