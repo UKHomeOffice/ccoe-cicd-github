@@ -51,6 +51,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # Scan the repo with Trivy
+    - name: Repo Trivy Scan
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "fs"
+        scan-ref: "."
+        format: 'table'
+        exit-code: '1'
+        trivyignores: ".trivyignore"
+        # output: $GITHUB_WORKSPACE/trivy-repo.txt
+
     # Install the latest version of Terraform CLI
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
@@ -70,13 +81,33 @@ jobs:
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
       run: terraform plan -input=false -out="./${{ env.tfplan-file-name }}"
 
-    - name: Terraform Trivy Scan
+    # Scan the Terraform plan with Trivy
+    - name: Terraform Plan Trivy Scan
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
       uses: aquasecurity/trivy-action@0.31.0
       with:
         scan-type: "config"
         scan-ref: "./${{ env.tfplan-file-name }}"
+        format: "table"
         exit-code: "1"
+        trivyignores: ".trivyignore"
+        # output: $GITHUB_WORKSPACE/trivy-tfplan.txt
+
+    # # Output Trivy Terraform plan scan
+    # - name: Publish Trivy Output to Summary
+    #   if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
+    #   run: |
+    #     if [[ -s $GITHUB_WORKSPACE/trivy-tfplan.txt ]]; then
+    #       {
+    #         echo "### Terraform Plan Trivy Output"
+    #         echo "<details><summary>Click to expand</summary>"
+    #         echo ""
+    #         echo '```terraform'
+    #         cat $GITHUB_WORKSPACE/trivy-tfplan.txt
+    #         echo '```'
+    #         echo "</details>"
+    #       } >> $GITHUB_STEP_SUMMARY
+    #     fi   
 
     - name: Upload Plan
       if: github.event_name == 'pull_request' && env.use-tfplan-output == 'true'
