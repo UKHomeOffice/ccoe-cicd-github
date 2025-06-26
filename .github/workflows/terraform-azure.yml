@@ -51,11 +51,19 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # Checkout the composite actions to the GitHub Actions runner
+    - name: Checkout composite actions
+      uses: actions/checkout@v4
+      with:
+        repository: UKHomeOffice/ccoe-cicd-github
+        ref: "composite-actions"
+        path: composite
+
     # Terraform setup, init, format, validate and repo Trivy scan
     # On every run
     - name: Terraform Init
       id: init
-      uses: ./.github/actions/terraform-init
+      uses: ./composite/.github/actions/terraform-init
       with:
         cloud-provider: "Azure"
         backend-storage-name: ${{ secrets.TF_STATE_STORAGE_ACCOUNT_NAME }}
@@ -66,7 +74,7 @@ jobs:
     - name: Terraform Plan
       if: (github.event_name == 'pull_request' && env.use-tfplan-output == 'true') || env.use-tfplan-output == 'false'
       id: plan
-      uses: ./.github/actions/terraform-plan
+      uses: ./composite/.github/actions/terraform-plan
       with:
         auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
         tfplan-name: ${{ env.tfplan-file-name }}
@@ -77,7 +85,7 @@ jobs:
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
       id: apply
-      uses: ./.github/actions/terraform-apply
+      uses: ./composite/.github/actions/terraform-apply
       with:
         tfplan-name: ${{ env.tfplan-file-name }}
         use-tfplan-artifact: ${{ env.use-tfplan-output }}
