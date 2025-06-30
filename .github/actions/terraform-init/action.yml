@@ -44,7 +44,7 @@ runs:
       shell: bash
       run: terraform fmt -check
     
-    # Checks that all Terraform configuration files adhere to a canonical format
+    # Checks that all Terraform configuration files have the correct syntax
     - name: Terraform Validate
       shell: bash
       run: terraform validate
