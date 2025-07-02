@@ -79,6 +79,7 @@ jobs:
         auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
         tfplan-name: ${{ env.tfplan-file-name }}
         output-tfplan: ${{ env.use-tfplan-output }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     # Terraform apply
     # On "main" branch
