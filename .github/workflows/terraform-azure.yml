@@ -78,6 +78,7 @@ jobs:
         tfplan-name: ${{ env.tfplan-file-name }}
         output-tfplan: ${{ env.use-tfplan-output }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        init-outcome: ${{ steps.init.outputs.init-outcome }}
 
     # Terraform apply
     # On "main" branch
