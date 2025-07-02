@@ -10,6 +10,10 @@ inputs:
     required: false
     description: "If a Terraform plan file should be output as an artifact."
     default: "false"
+  github-token:
+    required: false
+    description: "GitHub token to create pull request comment"
+    default: "false"
 
 outputs:
   plan-outcome:
@@ -42,11 +46,11 @@ runs:
     # Create / update pull request with a comment showing the Terraform outputs
     - name: Pull Request Comment
       uses: actions/github-script@v7
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && inputs.github-token != 'false'
       env:
         PLAN: "${{ steps.plan.outputs.stdout }}"
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ inputs.github-token }}
         script: |
           // Get all comments for PR
           const { data: comments } = await github.rest.issues.listComments({
