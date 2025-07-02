@@ -67,7 +67,6 @@ jobs:
       with:
         cloud-provider: "Azure"
         backend-storage-name: ${{ secrets.TF_STATE_STORAGE_ACCOUNT_NAME }}
-        auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
     
     # Terraform plan, state file Trivy scan and optional upload artifact
     # On pull requests where using plan output and all requests when not using plan output
@@ -76,7 +75,6 @@ jobs:
       id: plan
       uses: ./composite/.github/actions/terraform-plan
       with:
-        auth-id: ${{ secrets.TF_ARM_CLIENT_ID }}
         tfplan-name: ${{ env.tfplan-file-name }}
         output-tfplan: ${{ env.use-tfplan-output }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
