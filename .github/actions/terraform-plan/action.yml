@@ -65,9 +65,9 @@ runs:
           })
 
           // Prepare the comment format
-          if (${{ steps.fmt.outcome }}) { const fmt = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`` }
-          if (${{ steps.init.outcome }}) { const init = `#### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`` }
-          if (${{ steps.validate.outcome }}) { const validate = `#### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\` }
+          if (${{ steps.fmt.outcome || unsuccessful }} == 'success') { const fmt = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`` }
+          if (${{ steps.init.outcome || unsuccessful }} == 'success') { const init = `#### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`` }
+          if (${{ steps.validate.outcome || unsuccessful }} == 'success') { const validate = `#### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\` }
           <details><summary>Validation Output</summary>
 
           \`\`\`\n
@@ -76,7 +76,7 @@ runs:
 
           </details>` }
 
-          if (${{ steps.plan.outcome }}) { const plan = `#### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+          if (${{ steps.plan.outcome || unsuccessful }} == 'success') { const plan = `#### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
 
           <details><summary>Show Plan</summary>
 
