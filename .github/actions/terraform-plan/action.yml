@@ -117,13 +117,13 @@ runs:
           <details><summary>Show Plan</summary>
 
           \`\`\`terraform\n
-          // ${plan}
+          ${plan}
           \`\`\`
 
-          </details>`
-          // ${truncated_message}
+          </details>
+          ${truncated_message}
 
-          // *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ github.workspace }}\`, Workflow: \`${{ github.workflow }} ${{ inputs.environment }}\`*`;          
+          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ github.workspace }}\`, Workflow: \`${{ github.workflow }} ${{ inputs.environment }}\`*`;          
 
           // Check if creating or updating existing comment
           if (botComment) {
