@@ -14,18 +14,48 @@ inputs:
     required: false
     description: "GitHub token to create pull request comment"
     default: "false"
+  init-outcome:
+    required: false
+    description: "Terraform init command outcome"
+    default: "Not Provided"
 
 outputs:
   plan-outcome:
     description: "Terraform plan command outcome"
     value: ${{ steps.plan.outcome }}
-  trivy-outcome:
-    description: "Trivy scan command outcome"
-    value: ${{ steps.trivy.outcome }}    
+  trivy-repo-outcome:
+    description: "Trivy repo scan outcome"
+    value: ${{ steps.trivy-repo.outcome }}    
+  trivy-tfplan-outcome:
+    description: "Trivy TF plan scan outcome"
+    value: ${{ steps.trivy-tfplan.outcome }}
 
 runs:
   using: "composite"
   steps:
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      id: fmt
+      shell: bash
+      run: terraform fmt -check
+    
+    # Checks that all Terraform configuration files have the correct syntax
+    - name: Terraform Validate
+      id: validate
+      shell: bash
+      run: terraform validate
+
+    # Scan the repo with Trivy
+    - name: Repo Trivy Scan
+      id: trivy-repo
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        scan-type: "fs"
+        scan-ref: "."
+        format: 'table'
+        exit-code: '1'
+        trivyignores: ".trivyignore"
+    
     # Run the Terraform plan
     - name: Terraform Plan
       id: plan
@@ -65,18 +95,18 @@ runs:
           })
 
           // Prepare the comment format
-          if (${{ steps.fmt.outcome || "unsuccessful" }} == 'success') { const fmt = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`` }
-          if (${{ steps.init.outcome || "unsuccessful" }} == 'success') { const init = `#### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`` }
-          if (${{ steps.validate.outcome || "unsuccessful" }} == 'success') { const validate = `#### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\` }
+          const output = `#### Terraform Initialization ⚙️ \`${{ inputs.init-outcome }}\`
+          #### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`
+          #### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\`
           <details><summary>Validation Output</summary>
 
           \`\`\`\n
           ${{ steps.validate.outputs.stdout }}
           \`\`\`
 
-          </details>` }
+          </details>
 
-          if (${{ steps.plan.outcome || "unsuccessful" }} == 'success') { const plan = `#### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+          #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
 
           <details><summary>Show Plan</summary>
 
@@ -84,28 +114,7 @@ runs:
           ${process.env.PLAN}
           \`\`\`
 
-          </details>` }
-
-          // const output = `#### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`
-          // #### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`
-          // #### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\`
-          // <details><summary>Validation Output</summary>
-
-          // \`\`\`\n
-          // ${{ steps.validate.outputs.stdout }}
-          // \`\`\`
-
-          // </details>
-
-          // #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
-
-          // <details><summary>Show Plan</summary>
-
-          // \`\`\`terraform\n
-          // ${process.env.PLAN}
-          // \`\`\`
-
-          // </details>`;
+          </details>`;
 
           // Check if creating or updating existing comment
           if (botComment) {
